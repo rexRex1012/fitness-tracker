@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "FitnessApp",
+            "request": "launch",
+            "mainClass": "FitnessApp",
+            "projectName": "Fitness Tracker _d614a8c0"
+        },
+        {
+            "type": "java",
+            "name": "Run Java Program",
+            "request": "launch",
+            "mainClass": "TestApp",
+            "projectName": "FITNESS TRACKER"
+        }
+    ]
+}
