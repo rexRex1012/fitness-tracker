@@ -89,5 +89,17 @@ public class FitnessApp {
                 System.out.println("---");
             }
         }
+
+        System.out.println("\n=== Exercise Stats ===");
+        if (user.getExerciseStats().isEmpty()) {
+            System.out.println("No exercise stats yet.");
+        } else {
+            for (ExerciseStats stats : user.getExerciseStats().values()) {
+                System.out.println(stats);
+            }
+        }
+
+        System.out.println("\n=== Recommendations ===");
+        System.out.println(user.getRecommendations());
     }
 }
