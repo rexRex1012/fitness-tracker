@@ -6,6 +6,13 @@
             "name": "FitnessApp",
             "request": "launch",
             "mainClass": "FitnessApp",
+            "projectName": "fitness-tracker-1_1ab3b1a8"
+        },
+        {
+            "type": "java",
+            "name": "FitnessApp",
+            "request": "launch",
+            "mainClass": "FitnessApp",
             "projectName": "fitness-tracker_7cf6dd04"
         },
         {
