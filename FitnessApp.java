@@ -6,16 +6,25 @@ import java.util.Stack;
 
 public class FitnessApp {
 
-    private static final HashMap<String, User> users = new HashMap<>();
     private static final Scanner scanner = new Scanner(System.in);
 
+    // Persistence
+    private static final DataStore dataStore = new DataStore("smartfit_data.ser");
+
+    // Multi-user storage 
+    private static HashMap<String, User> users;
+
+    // Current logged-in user
     private static User currentUser = null;
 
-    // Undo/redo stacks use your Action classes
+    // Undo/redo stacks (session-scoped; not persisted)
     private static final Stack<Action> undoStack = new Stack<>();
     private static final Stack<Action> redoStack = new Stack<>();
 
     public static void main(String[] args) {
+        users = dataStore.load();
+        System.out.println("Loaded " + users.size() + " user(s).");
+
         while (true) {
             if (currentUser == null) {
                 showStartMenu();
@@ -25,7 +34,7 @@ public class FitnessApp {
         }
     }
 
-    //  START MENU (login/register/exit)
+    // ---------------- START MENU ----------------
 
     private static void showStartMenu() {
         System.out.println("\n=== SmartFit Tracker ===");
@@ -33,15 +42,13 @@ public class FitnessApp {
         System.out.println("2) Register");
         System.out.println("3) Exit");
         System.out.print("Choose an option: ");
+
         String choice = scanner.nextLine().trim();
 
         switch (choice) {
             case "1" -> login();
             case "2" -> register();
-            case "3" -> {
-                System.out.println("Goodbye!");
-                System.exit(0);
-            }
+            case "3" -> exitAndSave();
             default -> System.out.println("Invalid option. Try again.");
         }
     }
@@ -59,14 +66,14 @@ public class FitnessApp {
             return;
         }
 
-        User u = new User(username);
-        users.put(username, u);
-        currentUser = u;
+        User user = new User(username);
+        users.put(username, user);
+        currentUser = user;
 
-        // Optional: clear stacks on new login
         undoStack.clear();
         redoStack.clear();
 
+        dataStore.save(users);
         System.out.println("Registered and logged in as: " + currentUser.getUsername());
     }
 
@@ -74,22 +81,34 @@ public class FitnessApp {
         System.out.print("Username: ");
         String username = scanner.nextLine().trim().toLowerCase();
 
-        User u = users.get(username);
-        if (u == null) {
+        User user = users.get(username);
+        if (user == null) {
             System.out.println("User not found. Register first.");
             return;
         }
 
-        currentUser = u;
-
-        // Optional: clear stacks on login (keeps undo/redo per session-run)
+        currentUser = user;
         undoStack.clear();
         redoStack.clear();
 
         System.out.println("Logged in as: " + currentUser.getUsername());
     }
 
-    // USER MENU 
+    private static void logout() {
+        dataStore.save(users);
+        currentUser = null;
+        undoStack.clear();
+        redoStack.clear();
+        System.out.println("Logged out (saved).");
+    }
+
+    private static void exitAndSave() {
+        dataStore.save(users);
+        System.out.println("Goodbye!");
+        System.exit(0);
+    }
+
+    // ---------------- USER MENU ----------------
 
     private static void showUserMenu() {
         System.out.println("\n--- User Menu (" + currentUser.getUsername() + ") ---");
@@ -99,7 +118,9 @@ public class FitnessApp {
         System.out.println("4) Undo");
         System.out.println("5) Redo");
         System.out.println("6) Logout");
+        System.out.println("7) Exit");
         System.out.print("Choose an option: ");
+
         String choice = scanner.nextLine().trim();
 
         switch (choice) {
@@ -109,18 +130,12 @@ public class FitnessApp {
             case "4" -> undo();
             case "5" -> redo();
             case "6" -> logout();
+            case "7" -> exitAndSave();
             default -> System.out.println("Invalid option. Try again.");
         }
     }
 
-    private static void logout() {
-        System.out.println("Logged out.");
-        currentUser = null;
-        undoStack.clear();
-        redoStack.clear();
-    }
-
-    //ACTIONS: UNDO / REDO 
+    // ---------------- UNDO / REDO ----------------
 
     private static void undo() {
         if (undoStack.isEmpty()) {
@@ -142,39 +157,39 @@ public class FitnessApp {
         undoStack.push(a);
     }
 
-    //  FEATURE: LOG BODYWEIGHT (with Action) 
+    // ---------------- BODYWEIGHT ----------------
 
     private static void logBodyWeight() {
-        LocalDate date = readDateOrToday("Enter date (YYYY-MM-DD) [Enter for today]: ");
+        LocalDate date = readDateOrToday("Entry date (YYYY-MM-DD) [Enter for today]: ");
 
-        System.out.print("Enter body weight (lbs): ");
+        System.out.print("Body weight (lbs): ");
         String weightStr = scanner.nextLine().trim();
 
         try {
             double weight = Double.parseDouble(weightStr);
-            BodyWeightEntry entry = new BodyWeightEntry(date, weight);
 
-            // Do + track action
-            currentUser.addBodyweightEntry(entry);
+            BodyWeightEntry entry = new BodyWeightEntry(date, weight);
             Action action = new AddBodyWeightAction(currentUser, entry);
+
+            // perform + record
+            action.redo();
             undoStack.push(action);
             redoStack.clear();
 
-            System.out.println("Body weight logged successfully.");
+            dataStore.save(users);
         } catch (NumberFormatException e) {
             System.out.println("Invalid weight. Try again.");
         }
     }
 
-    // ---------------- FEATURE: ADD WORKOUT SESSION (with AddWorkoutAction) ----------------
+    // ---------------- WORKOUTS ----------------
 
     private static void addWorkoutSession() {
         System.out.println("\nAdd Workout Session");
-        LocalDate date = readDateOrToday("Session date (YYYY-MM-DD) [Enter for today]: ");
 
+        LocalDate date = readDateOrToday("Session date (YYYY-MM-DD) [Enter for today]: ");
         WorkoutSession session = new WorkoutSession(date);
 
-        // Tags
         System.out.print("Tags (comma-separated, e.g., legs,push,cardio) [optional]: ");
         String tagLine = scanner.nextLine().trim();
         if (!tagLine.isEmpty()) {
@@ -185,8 +200,7 @@ public class FitnessApp {
             }
         }
 
-        // Exercises
-        System.out.println("Add exercises. Type 'done' as the name to finish.");
+        System.out.println("Add exercises. Type 'done' as the exercise name to finish.");
         while (true) {
             System.out.print("Exercise name: ");
             String name = scanner.nextLine().trim();
@@ -215,13 +229,14 @@ public class FitnessApp {
             return;
         }
 
-        // Add to history + update stats
-        currentUser.addWorkoutSession(session);
-
-        // Track undo/redo via Action
         Action action = new AddWorkoutAction(currentUser, session);
+
+        // perform + record
+        action.redo();
         undoStack.push(action);
         redoStack.clear();
+
+        dataStore.save(users);
 
         System.out.println("Workout saved. Total volume: " + session.getTotalVolume());
     }
@@ -231,14 +246,12 @@ public class FitnessApp {
     private static void viewProgress() {
         System.out.println("\n=== Progress for " + currentUser.getUsername() + " ===");
 
-        // Workouts
         System.out.println("Workouts logged: " + currentUser.getHistory().size());
         if (!currentUser.getHistory().isEmpty()) {
             System.out.println("\nMost recent workout:");
             System.out.println(currentUser.getHistory().getLast());
         }
 
-        // Bodyweight
         System.out.println("\nBodyweight entries: " + currentUser.getBodyweights().size());
         if (!currentUser.getBodyweights().isEmpty()) {
             BodyWeightEntry first = currentUser.getBodyweights().get(0);
@@ -251,7 +264,6 @@ public class FitnessApp {
             System.out.printf("Trend: %.1f lbs%n", diff);
         }
 
-        // Exercise PRs / volume summary (quick look)
         if (!currentUser.getExerciseStats().isEmpty()) {
             System.out.println("\nExercise stats (PR + total volume):");
             for (ExerciseStats stats : currentUser.getExerciseStats().values()) {
