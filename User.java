@@ -1,16 +1,18 @@
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-public class User {
+public class User implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String username;
-
     private LinkedList<WorkoutSession> history;
     private ArrayList<BodyWeightEntry> bodyweights;
 
-    // Needed for AddWorkoutAction + PR/volume tracking
+    // Stats per exercise name (PR + volume)
     private HashMap<String, ExerciseStats> exerciseStats;
 
     public User(String username) {
@@ -41,12 +43,10 @@ public class User {
         bodyweights.add(entry);
     }
 
-    
     public HashMap<String, ExerciseStats> getExerciseStats() {
         return exerciseStats;
     }
 
-    
     public void updateExerciseStats(WorkoutSession session) {
         LocalDate date = session.getDate();
 
@@ -59,10 +59,7 @@ public class User {
                 exerciseStats.put(name, stats);
             }
 
-           
             stats.addVolume(e.getVolume());
-
-            
             stats.updatePR(e.getWeight(), date);
         }
     }
