@@ -1,5 +1,6 @@
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Stack;
@@ -26,11 +27,8 @@ public class FitnessApp {
         System.out.println("Loaded " + users.size() + " user(s).");
 
         while (true) {
-            if (currentUser == null) {
-                startMenu();
-            } else {
-                userMenu();
-            }
+            if (currentUser == null) startMenu();
+            else userMenu();
         }
     }
 
@@ -114,11 +112,13 @@ public class FitnessApp {
         System.out.println("\n--- User Menu (" + currentUser.getUsername() + ") ---");
         System.out.println("1) Add workout session");
         System.out.println("2) Log bodyweight");
-        System.out.println("3) View progress");
-        System.out.println("4) Undo");
-        System.out.println("5) Redo");
-        System.out.println("6) Logout");
-        System.out.println("7) Exit");
+        System.out.println("3) View workouts (history / sort / filter)");
+        System.out.println("4) View PR timeline");
+        System.out.println("5) View progress (summary)");
+        System.out.println("6) Undo");
+        System.out.println("7) Redo");
+        System.out.println("8) Logout");
+        System.out.println("9) Exit");
         System.out.print("Choose an option: ");
 
         String choice = scanner.nextLine().trim();
@@ -126,11 +126,13 @@ public class FitnessApp {
         switch (choice) {
             case "1" -> addWorkoutSession();
             case "2" -> logBodyWeight();
-            case "3" -> viewProgress();
-            case "4" -> undo();
-            case "5" -> redo();
-            case "6" -> logout();
-            case "7" -> exitAndSave();
+            case "3" -> workoutsMenu();          // ✅ Step 1 + 2
+            case "4" -> viewPRTimeline();        // ✅ Step 3
+            case "5" -> viewProgress();
+            case "6" -> undo();
+            case "7" -> redo();
+            case "8" -> logout();
+            case "9" -> exitAndSave();
             default -> System.out.println("Invalid option. Try again.");
         }
     }
@@ -167,12 +169,10 @@ public class FitnessApp {
 
         try {
             double weight = Double.parseDouble(weightStr);
-
             BodyWeightEntry entry = new BodyWeightEntry(date, weight);
 
-            // Use your Action class so undo/redo works
             Action action = new AddBodyWeightAction(currentUser, entry);
-            action.redo(); // perform the add
+            action.redo();
 
             undoStack.push(action);
             redoStack.clear();
@@ -192,7 +192,6 @@ public class FitnessApp {
         LocalDate date = readDateOrToday("Session date (YYYY-MM-DD) [Enter for today]: ");
         WorkoutSession session = new WorkoutSession(date);
 
-        // Tags
         System.out.print("Tags (comma-separated, e.g., legs,push,cardio) [optional]: ");
         String tagLine = scanner.nextLine().trim();
         if (!tagLine.isEmpty()) {
@@ -203,7 +202,6 @@ public class FitnessApp {
             }
         }
 
-        // Exercises
         System.out.println("Add exercises. Type 'done' as the exercise name to finish.");
         while (true) {
             System.out.print("Exercise name: ");
@@ -234,9 +232,8 @@ public class FitnessApp {
             return;
         }
 
-        // Use your Action class so undo/redo works + stats update correctly
         Action action = new AddWorkoutAction(currentUser, session);
-        action.redo(); // perform add
+        action.redo();
 
         undoStack.push(action);
         redoStack.clear();
@@ -245,36 +242,186 @@ public class FitnessApp {
         System.out.println("Workout saved. Total volume: " + session.getTotalVolume());
     }
 
-    // ---------------- VIEW PROGRESS ----------------
+    // ---------------- STEP 1 + 2: HISTORY / SORT / FILTER ----------------
+
+    private static void workoutsMenu() {
+        while (true) {
+            System.out.println("\n=== Workouts Menu ===");
+            System.out.println("1) View all workouts");
+            System.out.println("2) Sort workouts by date");
+            System.out.println("3) Sort workouts by total volume");
+            System.out.println("4) Filter workouts by tag");
+            System.out.println("5) Filter workouts by exercise name");
+            System.out.println("6) Back");
+            System.out.print("Choose an option: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1" -> printSessions(toList(currentUser.getHistory()));
+                case "2" -> {
+                    ArrayList<WorkoutSession> list = toList(currentUser.getHistory());
+                    selectionSortByDate(list);
+                    printSessions(list);
+                }
+                case "3" -> {
+                    ArrayList<WorkoutSession> list = toList(currentUser.getHistory());
+                    selectionSortByVolume(list);
+                    printSessions(list);
+                }
+                case "4" -> filterByTag();
+                case "5" -> filterByExercise();
+                case "6" -> { return; }
+                default -> System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    private static void filterByTag() {
+        System.out.print("Enter tag to filter (e.g., legs): ");
+        String tag = scanner.nextLine().trim().toLowerCase();
+        if (tag.isEmpty()) {
+            System.out.println("Tag cannot be empty.");
+            return;
+        }
+
+        ArrayList<WorkoutSession> results = new ArrayList<>();
+        for (WorkoutSession s : currentUser.getHistory()) {
+            if (s.getTags().contains(tag)) results.add(s);
+        }
+
+        System.out.println("\nFiltered by tag: " + tag);
+        printSessions(results);
+    }
+
+    private static void filterByExercise() {
+        System.out.print("Enter exercise name to filter (e.g., bench press): ");
+        String target = scanner.nextLine().trim().toLowerCase();
+        if (target.isEmpty()) {
+            System.out.println("Exercise name cannot be empty.");
+            return;
+        }
+
+        ArrayList<WorkoutSession> results = new ArrayList<>();
+
+        for (WorkoutSession s : currentUser.getHistory()) {
+            boolean found = false;
+            for (ExerciseEntry e : s.getExercises()) {
+                if (e.getName().toLowerCase().equals(target)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) results.add(s);
+        }
+
+        System.out.println("\nFiltered by exercise: " + target);
+        printSessions(results);
+    }
+
+    private static void printSessions(ArrayList<WorkoutSession> sessions) {
+        if (sessions.isEmpty()) {
+            System.out.println("No workouts found.");
+            return;
+        }
+
+        int i = 1;
+        for (WorkoutSession s : sessions) {
+            System.out.println("\n--- Session " + (i++) + " ---");
+            System.out.println(s);
+        }
+    }
+
+    private static ArrayList<WorkoutSession> toList(Iterable<WorkoutSession> iterable) {
+        ArrayList<WorkoutSession> list = new ArrayList<>();
+        for (WorkoutSession s : iterable) list.add(s);
+        return list;
+    }
+
+    // Custom sorting algorithm (Selection Sort)
+    private static void selectionSortByDate(ArrayList<WorkoutSession> list) {
+        for (int i = 0; i < list.size() - 1; i++) {
+            int minIndex = i;
+            for (int j = i + 1; j < list.size(); j++) {
+                // earliest date first
+                if (list.get(j).getDate().isBefore(list.get(minIndex).getDate())) {
+                    minIndex = j;
+                }
+            }
+            swap(list, i, minIndex);
+        }
+    }
+
+    // Custom sorting algorithm (Selection Sort)
+    private static void selectionSortByVolume(ArrayList<WorkoutSession> list) {
+        for (int i = 0; i < list.size() - 1; i++) {
+            int maxIndex = i;
+            for (int j = i + 1; j < list.size(); j++) {
+                // highest volume first
+                if (list.get(j).getTotalVolume() > list.get(maxIndex).getTotalVolume()) {
+                    maxIndex = j;
+                }
+            }
+            swap(list, i, maxIndex);
+        }
+    }
+
+    private static void swap(ArrayList<WorkoutSession> list, int i, int j) {
+        if (i == j) return;
+        WorkoutSession temp = list.get(i);
+        list.set(i, list.get(j));
+        list.set(j, temp);
+    }
+
+    // ---------------- STEP 3: PR TIMELINE ----------------
+
+    private static void viewPRTimeline() {
+        if (currentUser.getExerciseStats().isEmpty()) {
+            System.out.println("No exercise stats yet. Log a workout first.");
+            return;
+        }
+
+        System.out.println("\nExercises with stats:");
+        for (String name : currentUser.getExerciseStats().keySet()) {
+            System.out.println(" - " + name);
+        }
+
+        System.out.print("\nEnter exercise name EXACTLY as shown: ");
+        String target = scanner.nextLine().trim();
+
+        ExerciseStats stats = currentUser.getExerciseStats().get(target);
+        if (stats == null) {
+            System.out.println("Exercise not found in stats.");
+            return;
+        }
+
+        System.out.println("\n=== PR Timeline for " + target + " ===");
+        if (stats.getPrTimeline().isEmpty()) {
+            System.out.println("No PR updates yet.");
+            return;
+        }
+
+        for (String line : stats.getPrTimeline()) {
+            System.out.println(" - " + line);
+        }
+    }
+
+    // ---------------- VIEW PROGRESS (summary) ----------------
 
     private static void viewProgress() {
         System.out.println("\n=== Progress for " + currentUser.getUsername() + " ===");
 
         System.out.println("Workouts logged: " + currentUser.getHistory().size());
-        if (!currentUser.getHistory().isEmpty()) {
-            System.out.println("\nMost recent workout:");
-            System.out.println(currentUser.getHistory().getLast());
-        }
+        System.out.println("Bodyweight entries: " + currentUser.getBodyweights().size());
 
-        System.out.println("\nBodyweight entries: " + currentUser.getBodyweights().size());
         if (!currentUser.getBodyweights().isEmpty()) {
             BodyWeightEntry first = currentUser.getBodyweights().get(0);
             BodyWeightEntry last = currentUser.getBodyweights().get(currentUser.getBodyweights().size() - 1);
+            double diff = last.getWeight() - first.getWeight();
 
             System.out.println("First: " + first);
             System.out.println("Last : " + last);
-
-            double diff = last.getWeight() - first.getWeight();
             System.out.printf("Trend: %.1f lbs%n", diff);
-        }
-
-        if (!currentUser.getExerciseStats().isEmpty()) {
-            System.out.println("\nExercise stats (PR + total volume):");
-            for (ExerciseStats stats : currentUser.getExerciseStats().values()) {
-                System.out.println(" - " + stats);
-            }
-        } else {
-            System.out.println("\nNo exercise stats yet (log a workout first).");
         }
     }
 
