@@ -1,21 +1,28 @@
+import java.io.Serializable;
 import java.time.LocalDate;
 
-public class BodyWeightEntry {
-  private LocalDate date;
-  private double weight;    
+public class BodyWeightEntry implements Serializable {
 
-public BodyWeightEntry(LocalDate date, double weight) {
-    this.date = date;
-    this.weight = weight;
-}
-public LocalDate getDate() {
-    return date;
-}
-public double getWeight() {
-    return weight;
-}
-@Override
-public String toString() {
-    return "Date: " + date + ", Weight: " + weight + " lbs";
+    private static final long serialVersionUID = 1L;
+
+    private LocalDate date;
+    private double weight;
+
+    public BodyWeightEntry(LocalDate date, double weight) {
+        this.date = date;
+        this.weight = weight;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public double getWeight() {
+        return weight;
+    }
+
+    @Override
+    public String toString() {
+        return date + " : " + weight + " lbs";
     }
 }

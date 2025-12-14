@@ -11,13 +11,13 @@ public class FitnessApp {
     // Persistence
     private static final DataStore dataStore = new DataStore("smartfit_data.ser");
 
-    // Multi-user storage 
+    // Multi-user storage
     private static HashMap<String, User> users;
 
-    // Current logged-in user
+    // Logged-in user
     private static User currentUser = null;
 
-    // Undo/redo stacks (session-scoped; not persisted)
+    // Undo/Redo stacks (not persisted)
     private static final Stack<Action> undoStack = new Stack<>();
     private static final Stack<Action> redoStack = new Stack<>();
 
@@ -27,16 +27,16 @@ public class FitnessApp {
 
         while (true) {
             if (currentUser == null) {
-                showStartMenu();
+                startMenu();
             } else {
-                showUserMenu();
+                userMenu();
             }
         }
     }
 
     // ---------------- START MENU ----------------
 
-    private static void showStartMenu() {
+    private static void startMenu() {
         System.out.println("\n=== SmartFit Tracker ===");
         System.out.println("1) Login");
         System.out.println("2) Register");
@@ -110,7 +110,7 @@ public class FitnessApp {
 
     // ---------------- USER MENU ----------------
 
-    private static void showUserMenu() {
+    private static void userMenu() {
         System.out.println("\n--- User Menu (" + currentUser.getUsername() + ") ---");
         System.out.println("1) Add workout session");
         System.out.println("2) Log bodyweight");
@@ -169,14 +169,16 @@ public class FitnessApp {
             double weight = Double.parseDouble(weightStr);
 
             BodyWeightEntry entry = new BodyWeightEntry(date, weight);
-            Action action = new AddBodyWeightAction(currentUser, entry);
 
-            // perform + record
-            action.redo();
+            // Use your Action class so undo/redo works
+            Action action = new AddBodyWeightAction(currentUser, entry);
+            action.redo(); // perform the add
+
             undoStack.push(action);
             redoStack.clear();
 
             dataStore.save(users);
+            System.out.println("Body weight logged.");
         } catch (NumberFormatException e) {
             System.out.println("Invalid weight. Try again.");
         }
@@ -190,6 +192,7 @@ public class FitnessApp {
         LocalDate date = readDateOrToday("Session date (YYYY-MM-DD) [Enter for today]: ");
         WorkoutSession session = new WorkoutSession(date);
 
+        // Tags
         System.out.print("Tags (comma-separated, e.g., legs,push,cardio) [optional]: ");
         String tagLine = scanner.nextLine().trim();
         if (!tagLine.isEmpty()) {
@@ -200,11 +203,13 @@ public class FitnessApp {
             }
         }
 
+        // Exercises
         System.out.println("Add exercises. Type 'done' as the exercise name to finish.");
         while (true) {
             System.out.print("Exercise name: ");
             String name = scanner.nextLine().trim();
             if (name.equalsIgnoreCase("done")) break;
+
             if (name.isEmpty()) {
                 System.out.println("Name cannot be empty.");
                 continue;
@@ -229,15 +234,14 @@ public class FitnessApp {
             return;
         }
 
+        // Use your Action class so undo/redo works + stats update correctly
         Action action = new AddWorkoutAction(currentUser, session);
+        action.redo(); // perform add
 
-        // perform + record
-        action.redo();
         undoStack.push(action);
         redoStack.clear();
 
         dataStore.save(users);
-
         System.out.println("Workout saved. Total volume: " + session.getTotalVolume());
     }
 

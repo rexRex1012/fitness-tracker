@@ -1,4 +1,9 @@
-public class ExerciseEntry {
+import java.io.Serializable;
+
+public class ExerciseEntry implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private String name;
     private int sets;
     private int reps;
@@ -12,13 +17,26 @@ public class ExerciseEntry {
         this.weight = weight;
         this.muscleGroup = muscleGroup;
     }
-    
 
-    public String getName() { return name; }
-    public int getSets() { return sets; }
-    public int getReps() { return reps; }
-    public double getWeight() { return weight; }
-    public String getMuscleGroup() { return muscleGroup; }
+    public String getName() {
+        return name;
+    }
+
+    public int getSets() {
+        return sets;
+    }
+
+    public int getReps() {
+        return reps;
+    }
+
+    public double getWeight() {
+        return weight;
+    }
+
+    public String getMuscleGroup() {
+        return muscleGroup;
+    }
 
     public double getVolume() {
         return sets * reps * weight;
@@ -26,6 +44,7 @@ public class ExerciseEntry {
 
     @Override
     public String toString() {
-        return name + " | " + sets + "x" + reps + " @ " + weight + " lbs | " + muscleGroup;
+        return name + " (" + muscleGroup + ") - " +
+               sets + "x" + reps + " @ " + weight + " lbs";
     }
 }

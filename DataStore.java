@@ -9,17 +9,6 @@ public class DataStore {
         this.fileName = fileName;
     }
 
-    public void save(HashMap<String, User> users) {
-        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(fileName))) {
-            out.writeObject(users);
-            out.flush();
-            System.out.println("Data saved to " + fileName);
-        } catch (IOException e) {
-            System.out.println("ERROR: Could not save data. " + e.getMessage());
-        }
-    }
-
-    @SuppressWarnings("unchecked")
     public HashMap<String, User> load() {
         File f = new File(fileName);
         if (!f.exists() || f.length() == 0) {
@@ -29,12 +18,24 @@ public class DataStore {
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(fileName))) {
             Object obj = in.readObject();
             if (obj instanceof HashMap) {
-                return (HashMap<String, User>) obj;
+                @SuppressWarnings("unchecked")
+                HashMap<String, User> users = (HashMap<String, User>) obj;
+                return users;
             }
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("ERROR: Could not load data. Starting fresh. " + e.getMessage());
+            System.out.println("ERROR loading data, starting fresh: " + e.getMessage());
         }
 
         return new HashMap<>();
+    }
+
+    public void save(HashMap<String, User> users) {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(fileName))) {
+            out.writeObject(users);
+            out.flush();
+            System.out.println("Saved to " + fileName);
+        } catch (IOException e) {
+            System.out.println("ERROR saving data: " + e.getMessage());
+        }
     }
 }

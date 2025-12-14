@@ -1,74 +1,50 @@
-import java.time.LocalDate; // for time 
+import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.ArrayList;
 
-public class ExerciseStats {
+public class ExerciseStats implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private String exerciseName;
-    private double personalRecord; // the user BEST record
-    private ArrayList<PREntry> prTimeline; // PR 
-    private double totalVolume; // cummaltiove volume
+    private double totalVolume;
+    private double prWeight;
+    private ArrayList<String> prTimeline;
 
     public ExerciseStats(String exerciseName) {
         this.exerciseName = exerciseName;
-        this.personalRecord = 0.0;
+        this.totalVolume = 0;
+        this.prWeight = 0;
         this.prTimeline = new ArrayList<>();
-        this.totalVolume = 0.0;
     }
 
-    public String getExerciseName() {
-        return exerciseName;
+    public void addVolume(double volume) {
+        totalVolume += volume;
     }
 
-    public double getPersonalRecord() {
-        return personalRecord;
-    }
-
-    public ArrayList<PREntry> getPRTimeline() {
-        return prTimeline;
+    public void updatePR(double weight, LocalDate date) {
+        if (weight > prWeight) {
+            prWeight = weight;
+            prTimeline.add(date + " → " + weight + " lbs");
+        }
     }
 
     public double getTotalVolume() {
         return totalVolume;
     }
 
-    public void addVolume(double volume) {
-        this.totalVolume += volume;
+    public double getPrWeight() {
+        return prWeight;
     }
 
-    // update PR if new weight is higher, they hit a new record
-    public boolean updatePR(double weight, LocalDate date) {
-        if (weight > personalRecord) {
-            personalRecord = weight;
-            prTimeline.add(new PREntry(weight, date));
-            return true; // return true so we know we hit a new
-        }
-        return false; // if false then we did not hit a new PR
+    public ArrayList<String> getPrTimeline() {
+        return prTimeline;
     }
 
     @Override
     public String toString() {
-        return exerciseName + " - PR: " + personalRecord + " lbs, Total Volume: " + totalVolume + " lbs";
+        return exerciseName +
+               " | PR: " + prWeight + " lbs" +
+               " | Total Volume: " + totalVolume;
     }
-
-    public static class PREntry {
-        private double weight;
-        private LocalDate date;
-
-        public PREntry(double weight, LocalDate date) {
-            this.weight = weight;
-            this.date = date;
-        }
-
-        public double getWeight() {
-            return weight;
-        }
-
-        public LocalDate getDate() {
-            return date;
-        }
-
-        @Override
-        public String toString() {
-            return date + ": " + weight + " lbs";
-        }
-    }
-}
+} 
