@@ -46,14 +46,6 @@ public class User {
         bodyweights.add(entry);
     }
 
-    // Get the most recent bodyweight for bodyweight exercises
-    public double getCurrentBodyweight() {
-        if (bodyweights.isEmpty()) {
-            return 0.0; // Default if no bodyweight logged
-        }
-        return bodyweights.get(bodyweights.size() - 1).getWeight();
-    }
-
     public HashMap<String, ExerciseStats> getExerciseStats() {
         return exerciseStats;
     }
@@ -124,7 +116,7 @@ public class User {
             }
         }
 
-        return "💡 Recommendation: Focus more on " + lowestMuscle + " (current volume: " +
+        return "Recommendation: Focus more on " + lowestMuscle + " (current volume: " +
                String.format("%.0f", lowestVolume) + " lbs). This muscle group is undertrained compared to others.";
     }
 

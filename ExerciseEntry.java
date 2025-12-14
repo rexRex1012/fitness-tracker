@@ -12,6 +12,7 @@ public class ExerciseEntry {
         this.weight = weight;
         this.muscleGroup = muscleGroup;
     }
+    
 
     public String getName() { return name; }
     public int getSets() { return sets; }
