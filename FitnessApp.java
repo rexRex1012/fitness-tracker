@@ -53,7 +53,7 @@ public class FitnessApp {
         }
         System.out.print("Enter date (YYYY-MM-DD): ");
         String dateStr = scanner.nextLine();
-        System.out.print("Enter body weight (kg): ");
+        System.out.print("Enter body weight (lbs): ");
         String weightStr = scanner.nextLine();
         try {
             LocalDate date = LocalDate.parse(dateStr);
@@ -64,5 +64,30 @@ public class FitnessApp {
             System.out.println("Invalid input. Please try again.");
         }
     }
-   
-        
+    private static void viewProgress() {
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine();
+        User user = users.get(username);
+        if (user == null) {
+            System.out.println("User not found.");
+            return;
+        }
+        System.out.println("\n=== Body Weight Progress ===");
+        if (user.getBodyweights().isEmpty()) {
+            System.out.println("No body weight entries found.");
+        } else {
+            for (BodyWeightEntry entry : user.getBodyweights()) {
+                System.out.println(entry);
+            }
+        }
+        System.out.println("\n=== Workout History ===");
+        if (user.getHistory().isEmpty()) {
+            System.out.println("No workout sessions found.");
+        } else {
+            for (WorkoutSession session : user.getHistory()) {
+                System.out.println(session);
+                System.out.println("---");
+            }
+        }
+    }
+}
