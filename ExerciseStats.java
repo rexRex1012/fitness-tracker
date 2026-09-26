@@ -29,6 +29,10 @@ public class ExerciseStats implements Serializable {
         }
     }
 
+    public String getExerciseName() {
+        return exerciseName;
+    }
+
     public double getTotalVolume() {
         return totalVolume;
     }

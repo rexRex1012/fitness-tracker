@@ -24,6 +24,7 @@ public class FitnessApp {
 
     public static void main(String[] args) {
         users = dataStore.load();
+        for (User u : users.values()) u.rebuildExerciseStats(); // fixes stats saved by older versions
         System.out.println("Loaded " + users.size() + " user(s).");
 
         while (true) {
@@ -147,6 +148,7 @@ public class FitnessApp {
         Action a = undoStack.pop();
         a.undo();
         redoStack.push(a);
+        dataStore.save(users);
     }
 
     private static void redo() {
@@ -157,6 +159,7 @@ public class FitnessApp {
         Action a = redoStack.pop();
         a.redo();
         undoStack.push(a);
+        dataStore.save(users);
     }
 
     // ---------------- BODYWEIGHT ----------------
@@ -169,6 +172,10 @@ public class FitnessApp {
 
         try {
             double weight = Double.parseDouble(weightStr);
+            if (weight <= 0 || weight > 1500) {
+                System.out.println("Weight must be between 0 and 1500 lbs.");
+                return;
+            }
             BodyWeightEntry entry = new BodyWeightEntry(date, weight);
 
             Action action = new AddBodyWeightAction(currentUser, entry);
@@ -382,20 +389,20 @@ public class FitnessApp {
         }
 
         System.out.println("\nExercises with stats:");
-        for (String name : currentUser.getExerciseStats().keySet()) {
-            System.out.println(" - " + name);
+        for (ExerciseStats s : currentUser.getExerciseStats().values()) {
+            System.out.println(" - " + s.getExerciseName());
         }
 
-        System.out.print("\nEnter exercise name EXACTLY as shown: ");
+        System.out.print("\nEnter exercise name: ");
         String target = scanner.nextLine().trim();
 
-        ExerciseStats stats = currentUser.getExerciseStats().get(target);
+        ExerciseStats stats = currentUser.getExerciseStats().get(target.toLowerCase());
         if (stats == null) {
             System.out.println("Exercise not found in stats.");
             return;
         }
 
-        System.out.println("\n=== PR Timeline for " + target + " ===");
+        System.out.println("\n=== PR Timeline for " + stats.getExerciseName() + " ===");
         if (stats.getPrTimeline().isEmpty()) {
             System.out.println("No PR updates yet.");
             return;
@@ -415,8 +422,13 @@ public class FitnessApp {
         System.out.println("Bodyweight entries: " + currentUser.getBodyweights().size());
 
         if (!currentUser.getBodyweights().isEmpty()) {
+            // Use the earliest and latest DATES, not the order they were typed in
             BodyWeightEntry first = currentUser.getBodyweights().get(0);
-            BodyWeightEntry last = currentUser.getBodyweights().get(currentUser.getBodyweights().size() - 1);
+            BodyWeightEntry last = first;
+            for (BodyWeightEntry b : currentUser.getBodyweights()) {
+                if (b.getDate().isBefore(first.getDate())) first = b;
+                if (!b.getDate().isBefore(last.getDate())) last = b;
+            }
             double diff = last.getWeight() - first.getWeight();
 
             System.out.println("First: " + first);

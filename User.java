@@ -12,7 +12,7 @@ public class User implements Serializable {
     private LinkedList<WorkoutSession> history;
     private ArrayList<BodyWeightEntry> bodyweights;
 
-    // Stats per exercise name (PR + volume)
+    // Stats per exercise name 
     private HashMap<String, ExerciseStats> exerciseStats;
 
     public User(String username) {
@@ -32,7 +32,7 @@ public class User implements Serializable {
 
     public void addWorkoutSession(WorkoutSession session) {
         history.add(session);
-        updateExerciseStats(session);
+        rebuildExerciseStats();
     }
 
     public ArrayList<BodyWeightEntry> getBodyweights() {
@@ -52,15 +52,27 @@ public class User implements Serializable {
 
         for (ExerciseEntry e : session.getExercises()) {
             String name = e.getName();
+            String key = name.trim().toLowerCase(); // "Bench Press" and "bench press" count as the same exercise
 
-            ExerciseStats stats = exerciseStats.get(name);
+            ExerciseStats stats = exerciseStats.get(key);
             if (stats == null) {
                 stats = new ExerciseStats(name);
-                exerciseStats.put(name, stats);
+                exerciseStats.put(key, stats);
             }
 
             stats.addVolume(e.getVolume());
             stats.updatePR(e.getWeight(), date);
+        }
+    }
+
+    // Recalculates all volume + PR stats from scratch using the workout history.
+    // Used after undo/redo and on load so stats never get out of sync with the history.
+    public void rebuildExerciseStats() {
+        exerciseStats.clear();
+        ArrayList<WorkoutSession> sorted = new ArrayList<>(history);
+        sorted.sort((a, b) -> a.getDate().compareTo(b.getDate())); // oldest first so the PR timeline is in order
+        for (WorkoutSession s : sorted) {
+            updateExerciseStats(s);
         }
     }
 }

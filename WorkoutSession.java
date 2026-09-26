@@ -9,7 +9,7 @@ public class WorkoutSession implements Serializable {
 
     private LocalDate date;
     private ArrayList<ExerciseEntry> exercises;
-    private HashSet<String> tags;
+    private HashSet<String> tags; 
 
     public WorkoutSession(LocalDate date) {
         this.date = date;
