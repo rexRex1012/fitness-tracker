@@ -1,6 +1,6 @@
 # SmartFit Tracker
 
-A command-line Java fitness tracker for CS-242 (Team 8). Users can register, log workouts and body weight, track personal records, and undo or redo changes. All data is saved to a file, so it's still there the next time you run the program.
+A command-line Java fitness tracker. Users can register, log workouts and body weight, track personal records, and undo or redo changes. All data is saved to a file, so it's still there the next time you run the program.
 
 ## Features
 
