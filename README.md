@@ -36,13 +36,9 @@ A command-line Java fitness tracker for CS-242 (Team 8). Users can register, log
 
 ## How to Run
 
-Requires Java 14 or newer (it uses the newer switch syntax).
-
 ```bash
 javac *.java
 java FitnessApp
 ```
 
-## Team
 
-CS-242-03, Fall 2025, Team 8
