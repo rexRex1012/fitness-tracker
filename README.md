@@ -14,7 +14,6 @@ A command-line Java fitness tracker. Users can register, log workouts and body w
 
 ## Project Structure
 
-| File | What it does |
 |------|--------------|
 | `FitnessApp.java` | Main program, menus, and input handling |
 | `User.java` | A user's workout history, body weight entries, and exercise stats |
